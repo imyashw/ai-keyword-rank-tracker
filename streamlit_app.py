@@ -35,9 +35,12 @@ def validate_keyword(keyword: str) -> bool:
 def initialize_openai_client(api_key: str) -> None:
     """Initialize OpenAI client with API key"""
     try:
-        st.session_state.openai_client = OpenAI(api_key=api_key)
+        st.session_state.openai_client = OpenAI(
+            api_key=api_key,
+            timeout=60.0  # Set a reasonable timeout
+        )
     except Exception as e:
-        st.error(f"Failed to initialize OpenAI client: {str(e)}")
+        st.error(f"Error initializing OpenAI client: {str(e)}")
         st.session_state.openai_client = None
 
 def search_openai(keyword: str) -> List[Dict]:
