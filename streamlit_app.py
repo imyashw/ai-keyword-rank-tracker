@@ -1,133 +1,139 @@
 import streamlit as st
 import openai
-from datetime import datetime
-import pandas as pd
 import time
+import pandas as pd
+from typing import List, Dict
 
-def setup_page():
-    """Configure the basic Streamlit page layout and settings"""
-    st.set_page_config(page_title="AI Rank Tracker", layout="wide")
-    st.title("AI Search Rank Tracker")
-    st.write("Track your brand's position in AI search results")
-
-def initialize_openai():
-    """Initialize OpenAI client with API key from Streamlit secrets"""
-    api_key = st.text_input("Enter your OpenAI API key", type="password")
-    if api_key:
-        return openai.OpenAI(api_key=api_key)
-    return None
-
-def check_brand_mentions(response_text, brand_name):
+def validate_keyword(keyword: str) -> bool:
     """
-    Analyze where and how a brand is mentioned in the AI response
-    Returns position (early, middle, late) and the context around the mention
+    Validate if the keyword is specific enough.
+    Returns True if keyword is specific, False otherwise.
     """
-    # Convert to lowercase for case-insensitive matching
-    response_lower = response_text.lower()
-    brand_lower = brand_name.lower()
+    # Split keyword into words
+    words = keyword.lower().split()
     
-    # Find the position of the brand mention
-    if brand_lower in response_lower:
-        # Split response into thirds to determine position
-        total_length = len(response_lower)
-        first_third = total_length // 3
-        second_third = 2 * (total_length // 3)
-        
-        position = response_lower.find(brand_lower)
-        
-        if position < first_third:
-            mention_position = "Early (Top 3)"
-        elif position < second_third:
-            mention_position = "Middle"
-        else:
-            mention_position = "Late"
-            
-        # Extract context (50 characters before and after the mention)
-        start = max(0, position - 50)
-        end = min(len(response_text), position + len(brand_name) + 50)
-        context = response_text[start:end]
-        
-        return mention_position, context
+    # Check if keyword has at least 4 words and contains specific terms
+    if len(words) < 4:
+        return False
     
-    return "Not mentioned", "Brand not found in response"
+    # Add more specific checks based on your requirements
+    return True
+
+def search_openai(keyword: str, api_key: str) -> List[Dict]:
+    """
+    Search using OpenAI API and return results
+    """
+    try:
+        client = openai.Client(api_key=api_key)
+        
+        # Construct a prompt that asks for search results
+        prompt = f"""Please provide a list of top 10 relevant results for the search term: "{keyword}"
+        Format each result as: [Brand/Company Name] - [Brief Description]
+        Focus on actual businesses and brands that match this query."""
+        
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a search engine providing accurate, relevant results."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
+        
+        # Extract and parse the results
+        results_text = response.choices[0].message.content
+        results = results_text.strip().split('\n')
+        
+        # Clean and structure the results
+        parsed_results = []
+        for idx, result in enumerate(results, 1):
+            if result.strip():
+                parsed_results.append({
+                    'rank': idx,
+                    'result': result.strip()
+                })
+        
+        return parsed_results
+    
+    except Exception as e:
+        st.error(f"Error occurred while searching: {str(e)}")
+        return []
+
+def analyze_rankings(results: List[Dict], target_brand: str) -> Dict:
+    """
+    Analyze the rankings for mentions of the target brand
+    """
+    analysis = {
+        'found': False,
+        'rank': None,
+        'context': None
+    }
+    
+    target_brand = target_brand.lower()
+    for result in results:
+        if target_brand in result['result'].lower():
+            analysis['found'] = True
+            analysis['rank'] = result['rank']
+            analysis['context'] = result['result']
+            break
+    
+    return analysis
 
 def main():
-    setup_page()
+    st.title("Keyword Ranking Analysis Tool")
     
-    # Initialize OpenAI client
-    client = initialize_openai()
-    if not client:
-        st.warning("Please enter your OpenAI API key to continue")
-        return
+    # Add description and instructions
+    st.write("""
+    This tool analyzes search rankings for specific keywords related to your brand.
+    Please provide specific, detailed keywords for better results.
     
-    # Get user inputs
-    brand_name = st.text_input("Enter your brand name:")
-    keywords = st.text_area("Enter keywords (one per line):")
+    Example of a good keyword: "best plus size women's clothing brands in Mumbai"
+    Example of a poor keyword: "clothing brands"
+    """)
     
-    if st.button("Track Rankings") and brand_name and keywords:
-        # Convert keywords text area into list
-        keyword_list = [k.strip() for k in keywords.split('\n') if k.strip()]
+    # Input fields
+    api_key = st.text_input("Enter your OpenAI API Key", type="password")
+    target_brand = st.text_input("Enter your brand name")
+    keyword = st.text_input("Enter your specific keyword to analyze")
+    
+    if st.button("Analyze Rankings"):
+        if not api_key or not keyword or not target_brand:
+            st.warning("Please fill in all fields.")
+            return
         
-        # Prepare results storage
-        results = []
+        # Validate keyword
+        if not validate_keyword(keyword):
+            st.warning("""
+            Please enter a more specific keyword. Your keyword should:
+            - Be at least 4 words long
+            - Include specific details (location, category, etc.)
+            - Be relevant to your brand
+            """)
+            return
         
-        # Progress bar
-        progress_bar = st.progress(0)
-        
-        for idx, keyword in enumerate(keyword_list):
-            st.write(f"Checking keyword: {keyword}")
+        with st.spinner("Analyzing rankings..."):
+            # Perform the search
+            results = search_openai(keyword, api_key)
             
-            try:
-                # Create a search-like prompt
-                prompt = f"What are the best {keyword}? Please provide a comprehensive list with brief descriptions."
+            if results:
+                # Analyze rankings
+                analysis = analyze_rankings(results, target_brand)
                 
-                # Make API call to OpenAI
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful shopping assistant providing product recommendations."},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
+                # Display results
+                st.subheader("Search Results")
+                df = pd.DataFrame(results)
+                st.dataframe(df)
                 
-                # Get the response text
-                response_text = response.choices[0].message.content
-                
-                # Analyze the response
-                position, context = check_brand_mentions(response_text, brand_name)
-                
-                # Store results
-                results.append({
-                    'Keyword': keyword,
-                    'Position': position,
-                    'Context': context,
-                    'Timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                })
-                
-                # Update progress
-                progress_bar.progress((idx + 1) / len(keyword_list))
-                
-                # Avoid rate limits
-                time.sleep(1)
-                
-            except Exception as e:
-                st.error(f"Error processing keyword '{keyword}': {str(e)}")
-        
-        # Display results
-        if results:
-            df = pd.DataFrame(results)
-            st.write("### Ranking Results")
-            st.dataframe(df)
-            
-            # Download button for results
-            csv = df.to_csv(index=False)
-            st.download_button(
-                "Download Results",
-                csv,
-                "ai_rankings.csv",
-                "text/csv",
-                key='download-csv'
-            )
+                st.subheader("Brand Analysis")
+                if analysis['found']:
+                    st.success(f"Your brand was found at rank {analysis['rank']}")
+                    st.write("Context:", analysis['context'])
+                else:
+                    st.warning("Your brand was not found in the top results.")
+                    st.write("Consider:")
+                    st.write("- Optimizing your brand's online presence")
+                    st.write("- Using different keyword variations")
+                    st.write("- Focusing on more specific geographic or niche markets")
 
 if __name__ == "__main__":
     main()
