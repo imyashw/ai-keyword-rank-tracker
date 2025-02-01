@@ -107,11 +107,47 @@ with st.expander("ℹ️ How to use this tool", expanded=True):
     3. Include specific product/service category
     4. Target your niche market
     
-    **Examples:**
-    ✅ Good: "best plus size women's clothing brands in Mumbai"
-    ✅ Good: "luxury organic skincare brands in Delhi NCR"
-    ❌ Poor: "clothing brands"
-    ❌ Poor: "skincare companies"
+    **Effective Search Patterns for AI Analysis:**
+
+    ✅ Listicle-Style Queries:
+    1. "top 10 plus size clothing brands compared to XYZ brand"
+       - Requests specific list format
+       - Includes direct comparison
+       - Clear brand benchmark
+       - Defined market segment
+
+    2. "best alternatives to [Your Brand] for organic skincare"
+       - Triggers comparison analysis
+       - Specifies market niche
+       - Focuses on alternatives
+       - Natural search pattern
+
+    3. "which brands compete with [Your Brand] in premium handbags"
+       - Asks for competitive analysis
+       - Defines market segment
+       - Price category specified
+       - Question format works well with AI
+
+    ✅ Comparison-Focused Queries:
+    1. "how does [Your Brand] compare to leading Mumbai fashion brands"
+       - Direct comparison request
+       - Geographic focus
+       - Industry specific
+       - Evaluative context
+
+    2. "is [Your Brand] better than [Competitor] for vegan cosmetics"
+       - Direct competitor comparison
+       - Specific product category
+       - Clear evaluation request
+       - User-intent focused
+
+    💡 Why These Work Better with AI:
+    - Trigger list generation
+    - Request direct comparisons
+    - Use natural question formats
+    - Include brand context
+    - Specify market segments
+    - Ask for rankings/evaluations
     """)
 
 # Input fields
