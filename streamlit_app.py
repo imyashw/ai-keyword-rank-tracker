@@ -32,17 +32,6 @@ def validate_keyword(keyword: str) -> bool:
     # Accept if it's a comparison, has qualifier, or minimum 3 words
     return has_comparison or has_qualifier or len(words) >= 3
 
-def initialize_openai_client(api_key: str) -> None:
-    """Initialize OpenAI client with API key"""
-    try:
-        st.session_state.openai_client = OpenAI(
-            api_key=api_key
-        )
-    except Exception as e:
-        st.error(f"Error initializing OpenAI client: {str(e)}")
-        st.session_state.openai_client = None
-        raise e
-
 def search_openai(keyword: str) -> List[Dict]:
     """Search using OpenAI API and return results"""
     if not st.session_state.openai_client:
