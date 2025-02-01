@@ -1,5 +1,5 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import time
 import pandas as pd
 from typing import List, Dict
@@ -24,7 +24,7 @@ def search_openai(keyword: str, api_key: str) -> List[Dict]:
     Search using OpenAI API and return results
     """
     try:
-        client = openai.Client(api_key=api_key)
+        client = OpenAI(api_key=api_key)
         
         # Construct a prompt that asks for search results
         prompt = f"""Please provide a list of top 10 relevant results for the search term: "{keyword}"
