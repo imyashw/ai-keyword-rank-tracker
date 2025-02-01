@@ -15,25 +15,22 @@ if 'openai_client' not in st.session_state:
     st.session_state.openai_client = None
 
 def validate_keyword(keyword: str) -> bool:
-    """Validate if the keyword follows common AI search patterns"""
+    """Validate if the keyword follows common search patterns"""
     if not keyword:
         return False
         
     keyword_lower = keyword.lower()
+    words = keyword_lower.split()
     
-    # Check for comparison patterns
-    comparison_indicators = ["vs", "versus", "compared to", "better than", "alternatives to"]
-    has_comparison = any(indicator in keyword_lower for indicator in comparison_indicators)
+    # Check for comparison patterns (e.g., "vs", "versus")
+    has_comparison = "vs" in words or "versus" in words
     
-    # Check for specific location/context
-    has_context = any(word in keyword_lower for word in ["in", "for", "using"])
+    # Check for basic qualifying words
+    qualifiers = ["best", "top", "free", "pricing", "alternatives", "how"]
+    has_qualifier = any(word in words for word in qualifiers)
     
-    # Check for question patterns
-    question_starters = ["how", "what", "which", "where", "why", "when", "is", "are"]
-    is_question = any(keyword_lower.startswith(word) for word in question_starters)
-    
-    # Validate based on length and patterns
-    return len(keyword_lower.split()) >= 4 or has_comparison or (has_context and len(keyword_lower.split()) >= 3) or is_question
+    # Accept if it's a comparison, has qualifier, or minimum 3 words
+    return has_comparison or has_qualifier or len(words) >= 3
 
 def initialize_openai_client(api_key: str) -> None:
     """Initialize OpenAI client with API key"""
@@ -121,56 +118,50 @@ with st.expander("ℹ️ How to use this tool", expanded=True):
     3. Include specific product/service category
     4. Target your niche market
     
-    **Common AI Search Patterns:**
+    **How Users Actually Search in AI Tools:**
 
     1. Direct Comparisons: 
-        "Zapier vs Make: which is better for connecting Shopify to Gmail"
-        - Users seek specific tool comparisons
-        - Include use case
-        - Want practical differences
-        - Expect pros/cons analysis
-
-    2. Local Discovery:
-        "best vegan restaurants in Mumbai serving authentic Thai cuisine"
-        - Location-specific
-        - Niche requirement
-        - Quality indicator
-        - Cuisine type
+        "zapier vs make pricing"
+        - Short and direct
+        - Specific aspect (pricing)
+        - No fluff
         
-    3. How-to Solutions:
-        "how to automate Instagram posting without using Meta Business Suite"
-        - Specific problem
-        - Excludes unwanted solution
-        - Task-focused
-        - Seeks alternatives
+    2. Local Search:
+        "best vegan restaurants mumbai"
+        - Location + category
+        - Simple qualifier
+        - No complex phrases
 
-    4. Product/Service Reviews:
-        "review Notion vs Coda for managing a small design agency"
-        - Tool comparison
-        - Specific use case
-        - Business context
-        - Seeks evaluation
+    3. Tool/Product Search:
+        "chatgpt alternatives free"
+        - Named product
+        - Key qualifier (free)
+        - Direct intent
 
-    5. Alternatives Search:
-        "alternatives to Canva for creating social media posts"
-        - Named reference product
-        - Specific use case
-        - Implies comparison
-        - Seeks options
-
-    6. Industry Analysis:
-        "emerging AI image generation tools competing with Midjourney in 2024"
-        - Market segment
-        - Named leader
+    4. Category Lists:
+        "top AI image generators 2024"
+        - Clear category
         - Timeframe
-        - Competitive focus
+        - List intent
 
-    💡 Why These Work Well:
-    - Natural language questions
-    - Specific use cases included
-    - Clear comparison points
-    - Contextual requirements
-    - Problem-solution format
+    5. Problem-Solving:
+        "how to embed youtube video wordpress"
+        - Task-focused
+        - Platform specific
+        - No unnecessary words
+
+    6. Reviews/Rankings:
+        "best project management tools 2024"
+        - Category
+        - Timeline
+        - Quality indicator
+
+    💡 Key Points:
+    - Users prefer short, direct queries
+    - Specific features/aspects mentioned
+    - Time references when relevant
+    - No complicated phrases
+    - Often includes pricing/cost aspects
     """)
 
 # Input fields
