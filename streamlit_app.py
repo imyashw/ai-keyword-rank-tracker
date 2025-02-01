@@ -15,11 +15,25 @@ if 'openai_client' not in st.session_state:
     st.session_state.openai_client = None
 
 def validate_keyword(keyword: str) -> bool:
-    """Validate if the keyword is specific enough"""
+    """Validate if the keyword follows common AI search patterns"""
     if not keyword:
         return False
-    words = keyword.lower().split()
-    return len(words) >= 4
+        
+    keyword_lower = keyword.lower()
+    
+    # Check for comparison patterns
+    comparison_indicators = ["vs", "versus", "compared to", "better than", "alternatives to"]
+    has_comparison = any(indicator in keyword_lower for indicator in comparison_indicators)
+    
+    # Check for specific location/context
+    has_context = any(word in keyword_lower for word in ["in", "for", "using"])
+    
+    # Check for question patterns
+    question_starters = ["how", "what", "which", "where", "why", "when", "is", "are"]
+    is_question = any(keyword_lower.startswith(word) for word in question_starters)
+    
+    # Validate based on length and patterns
+    return len(keyword_lower.split()) >= 4 or has_comparison or (has_context and len(keyword_lower.split()) >= 3) or is_question
 
 def initialize_openai_client(api_key: str) -> None:
     """Initialize OpenAI client with API key"""
@@ -107,47 +121,56 @@ with st.expander("ℹ️ How to use this tool", expanded=True):
     3. Include specific product/service category
     4. Target your niche market
     
-    **Effective Search Patterns for AI Analysis:**
+    **Common AI Search Patterns:**
 
-    ✅ Listicle-Style Queries:
-    1. "top 10 plus size clothing brands compared to XYZ brand"
-       - Requests specific list format
-       - Includes direct comparison
-       - Clear brand benchmark
-       - Defined market segment
+    1. Direct Comparisons: 
+        "Zapier vs Make: which is better for connecting Shopify to Gmail"
+        - Users seek specific tool comparisons
+        - Include use case
+        - Want practical differences
+        - Expect pros/cons analysis
 
-    2. "best alternatives to [Your Brand] for organic skincare"
-       - Triggers comparison analysis
-       - Specifies market niche
-       - Focuses on alternatives
-       - Natural search pattern
+    2. Local Discovery:
+        "best vegan restaurants in Mumbai serving authentic Thai cuisine"
+        - Location-specific
+        - Niche requirement
+        - Quality indicator
+        - Cuisine type
+        
+    3. How-to Solutions:
+        "how to automate Instagram posting without using Meta Business Suite"
+        - Specific problem
+        - Excludes unwanted solution
+        - Task-focused
+        - Seeks alternatives
 
-    3. "which brands compete with [Your Brand] in premium handbags"
-       - Asks for competitive analysis
-       - Defines market segment
-       - Price category specified
-       - Question format works well with AI
+    4. Product/Service Reviews:
+        "review Notion vs Coda for managing a small design agency"
+        - Tool comparison
+        - Specific use case
+        - Business context
+        - Seeks evaluation
 
-    ✅ Comparison-Focused Queries:
-    1. "how does [Your Brand] compare to leading Mumbai fashion brands"
-       - Direct comparison request
-       - Geographic focus
-       - Industry specific
-       - Evaluative context
+    5. Alternatives Search:
+        "alternatives to Canva for creating social media posts"
+        - Named reference product
+        - Specific use case
+        - Implies comparison
+        - Seeks options
 
-    2. "is [Your Brand] better than [Competitor] for vegan cosmetics"
-       - Direct competitor comparison
-       - Specific product category
-       - Clear evaluation request
-       - User-intent focused
+    6. Industry Analysis:
+        "emerging AI image generation tools competing with Midjourney in 2024"
+        - Market segment
+        - Named leader
+        - Timeframe
+        - Competitive focus
 
-    💡 Why These Work Better with AI:
-    - Trigger list generation
-    - Request direct comparisons
-    - Use natural question formats
-    - Include brand context
-    - Specify market segments
-    - Ask for rankings/evaluations
+    💡 Why These Work Well:
+    - Natural language questions
+    - Specific use cases included
+    - Clear comparison points
+    - Contextual requirements
+    - Problem-solution format
     """)
 
 # Input fields
