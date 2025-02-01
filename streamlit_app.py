@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize session state for OpenAI client
+# Initialize session state
 if 'openai_client' not in st.session_state:
     st.session_state.openai_client = None
 
@@ -22,7 +22,7 @@ def validate_keyword(keyword: str) -> bool:
     keyword_lower = keyword.lower()
     words = keyword_lower.split()
     
-    # Check for comparison patterns (e.g., "vs", "versus")
+    # Check for comparison patterns
     has_comparison = "vs" in words or "versus" in words
     
     # Check for basic qualifying words
@@ -96,20 +96,12 @@ def analyze_rankings(results: List[Dict], target_brand: str) -> Dict:
     
     return analysis
 
-# Main app
+# Main app title
 st.title("🔍 Keyword Ranking Analysis Tool")
 
 # Instructions
 with st.expander("ℹ️ How to use this tool", expanded=True):
     st.write("""
-    This tool analyzes search rankings for specific keywords related to your brand.
-    
-    **Guidelines for good keywords:**
-    1. Be specific and detailed (minimum 4 words)
-    2. Include location if relevant
-    3. Include specific product/service category
-    4. Target your niche market
-    
     **How Users Actually Search in AI Tools:**
 
     1. Direct Comparisons: 
@@ -147,25 +139,25 @@ with st.expander("ℹ️ How to use this tool", expanded=True):
         - Category
         - Timeline
         - Quality indicator
-
-    💡 Key Points:
-    - Users prefer short, direct queries
-    - Specific features/aspects mentioned
-    - Time references when relevant
-    - No complicated phrases
-    - Often includes pricing/cost aspects
     """)
 
-# Input fields
-api_key = st.text_input(
+# API Configuration in sidebar
+st.sidebar.title("API Configuration")
+api_key = st.sidebar.text_input(
     "OpenAI API Key",
     type="password",
-    help="Enter your OpenAI API key. Get one at https://platform.openai.com/api-keys"
+    help="Enter your OpenAI API key"
 )
 
-if api_key and st.session_state.openai_client is None:
-    initialize_openai_client(api_key)
+# Initialize OpenAI client when API key is provided
+if api_key:
+    try:
+        st.session_state.openai_client = OpenAI(api_key=api_key)
+    except Exception as e:
+        st.error(f"Error with OpenAI client: {str(e)}")
+        st.session_state.openai_client = None
 
+# Main input fields
 target_brand = st.text_input(
     "Your Brand Name",
     help="Enter your brand name exactly as it appears online"
@@ -173,7 +165,7 @@ target_brand = st.text_input(
 
 keyword = st.text_input(
     "Search Keyword",
-    help="Enter a specific keyword to analyze (minimum 4 words)"
+    help="Enter a specific keyword to analyze"
 )
 
 # Analysis button
@@ -184,9 +176,9 @@ if st.button("🔍 Analyze Rankings", type="primary"):
     elif not validate_keyword(keyword):
         st.warning("""
         ⚠️ Please enter a more specific keyword. Your keyword should:
-        - Be at least 4 words long
-        - Include specific details (location, category, etc.)
-        - Be relevant to your brand
+        - Be at least 3 words long
+        - Or include specific comparisons (vs, versus)
+        - Or include qualifiers (best, top, free, etc.)
         """)
     
     else:
