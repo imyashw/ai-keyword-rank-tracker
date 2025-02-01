@@ -1,13 +1,7 @@
 import streamlit as st
 import pandas as pd
+from openai import OpenAI
 from typing import List, Dict
-
-try:
-    from openai import OpenAI  # new style import
-    OPENAI_STYLE = "new"
-except ImportError:
-    import openai  # old style import
-    OPENAI_STYLE = "old"
 
 # Page config
 st.set_page_config(
@@ -19,17 +13,6 @@ st.set_page_config(
 # Initialize session state
 if 'openai_client' not in st.session_state:
     st.session_state.openai_client = None
-
-def init_openai_client(api_key: str):
-    """Initialize OpenAI client based on installed version"""
-    try:
-        if OPENAI_STYLE == "new":
-            return OpenAI(api_key=api_key)
-        else:
-            openai.api_key = api_key
-            return openai
-    except Exception as e:
-        raise Exception(f"Failed to initialize OpenAI client: {str(e)}")
 
 def validate_keyword(keyword: str) -> bool:
     """Validate if the keyword follows common search patterns"""
@@ -61,27 +44,16 @@ def search_openai(keyword: str) -> List[Dict]:
         Focus on actual businesses and brands that match this query.
         Ensure results are numbered 1-10."""
         
-        if OPENAI_STYLE == "new":
-            response = st.session_state.openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a search engine providing accurate, relevant results."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
-            )
-            results_text = response.choices[0].message.content
-        else:
-            response = st.session_state.openai_client.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a search engine providing accurate, relevant results."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
-            )
-            results_text = response.choices[0].message['content']
+        response = st.session_state.openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a search engine providing accurate, relevant results."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
+        )
         
+        results_text = response.choices[0].message.content
         results = results_text.strip().split('\n')
         
         parsed_results = []
@@ -180,10 +152,9 @@ api_key = st.sidebar.text_input(
 # Initialize OpenAI client when API key is provided
 if api_key:
     try:
-        st.session_state.openai_client = init_openai_client(api_key)
-        st.sidebar.success("✅ API key configured successfully!")
+        st.session_state.openai_client = OpenAI(api_key=api_key, timeout=30)
     except Exception as e:
-        st.sidebar.error(f"❌ Error initializing OpenAI client: {str(e)}")
+        st.error(f"Error with OpenAI client: {str(e)}")
         st.session_state.openai_client = None
 
 # Main input fields
@@ -199,10 +170,9 @@ keyword = st.text_input(
 
 # Analysis button
 if st.button("🔍 Analyze Rankings", type="primary"):
-    if not api_key:
-        st.error("Please enter your OpenAI API key in the sidebar first.")
-    elif not all([keyword, target_brand]):
-        st.warning("Please fill in both the brand name and search keyword.")
+    if not all([api_key, keyword, target_brand]):
+        st.warning("Please fill in all fields to proceed.")
+    
     elif not validate_keyword(keyword):
         st.warning("""
         ⚠️ Please enter a more specific keyword. Your keyword should:
@@ -210,6 +180,7 @@ if st.button("🔍 Analyze Rankings", type="primary"):
         - Or include specific comparisons (vs, versus)
         - Or include qualifiers (best, top, free, etc.)
         """)
+    
     else:
         with st.spinner("🔄 Analyzing rankings..."):
             results = search_openai(keyword)
