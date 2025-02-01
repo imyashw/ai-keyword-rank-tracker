@@ -152,9 +152,11 @@ api_key = st.sidebar.text_input(
 # Initialize OpenAI client when API key is provided
 if api_key:
     try:
+        # Initialize the OpenAI client with just the API key
         st.session_state.openai_client = OpenAI(api_key=api_key)
+        st.sidebar.success("✅ API key configured successfully!")
     except Exception as e:
-        st.error(f"Error with OpenAI client: {str(e)}")
+        st.sidebar.error(f"❌ Error initializing OpenAI client: {str(e)}")
         st.session_state.openai_client = None
 
 # Main input fields
@@ -170,9 +172,10 @@ keyword = st.text_input(
 
 # Analysis button
 if st.button("🔍 Analyze Rankings", type="primary"):
-    if not all([api_key, keyword, target_brand]):
-        st.warning("Please fill in all fields to proceed.")
-    
+    if not api_key:
+        st.error("Please enter your OpenAI API key in the sidebar first.")
+    elif not all([keyword, target_brand]):
+        st.warning("Please fill in both the brand name and search keyword.")
     elif not validate_keyword(keyword):
         st.warning("""
         ⚠️ Please enter a more specific keyword. Your keyword should:
@@ -180,7 +183,6 @@ if st.button("🔍 Analyze Rankings", type="primary"):
         - Or include specific comparisons (vs, versus)
         - Or include qualifiers (best, top, free, etc.)
         """)
-    
     else:
         with st.spinner("🔄 Analyzing rankings..."):
             results = search_openai(keyword)
